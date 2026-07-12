@@ -8,6 +8,9 @@ from mope.db import init_db, get_db, ModelRegistry
 from mope.schemas import PredictionsResponse, PredictionTriggerRequest
 from mope.inference import engine_singleton
 
+from fastapi.staticfiles import StaticFiles
+import os
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     description="Multi-Outcome Prediction Engine (MOPE) evaluating student wellness risks.",
@@ -37,7 +40,6 @@ def on_startup():
     finally:
         db.close()
 
-@app.get("/")
 @app.get("/health")
 def health_check(db: Session = Depends(get_db)):
     """Health check endpoint showing current model version registry details."""
@@ -107,3 +109,8 @@ def trigger_mope_predictions(
         raise HTTPException(status_code=503, detail=str(re))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Prediction trigger failed: {str(e)}")
+
+# Mount static files for the dashboard frontend
+frontend_path = os.path.normpath(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend"))
+os.makedirs(frontend_path, exist_ok=True)
+app.mount("/", StaticFiles(directory=frontend_path, html=True), name="static")

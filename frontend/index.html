@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wellmate | Multi-Outcome Prediction Engine (MOPE)</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background-glows">
+        <div class="glow glow-1"></div>
+        <div class="glow glow-2"></div>
+    </div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="brand">
+                <i class="fa-solid fa-heart-pulse logo-icon"></i>
+                <div class="brand-text">
+                    <h1>WELLMATE</h1>
+                    <span>Multi-Outcome Prediction Engine (MOPE)</span>
+                </div>
+            </div>
+            <div class="server-status" id="server-status">
+                <span class="status-indicator pinging"></span>
+                <span class="status-text">Connecting to MOPE...</span>
+            </div>
+        </header>
+
+        <main class="dashboard-grid">
+            <!-- Left Panel: Controls -->
+            <section class="panel control-panel">
+                <h2><i class="fa-solid fa-sliders"></i> Diagnostic Controls</h2>
+                <p class="panel-desc">Query a student's temporal twin trace and test risk projections.</p>
+                
+                <div class="form-group">
+                    <label for="student-id-select">Select Test Student</label>
+                    <div class="select-wrapper">
+                        <select id="student-id-select">
+                            <option value="std-1001" selected>std-1001 (Simulated High Stress)</option>
+                            <option value="std-1015">std-1015 (Simulated Medium Stress)</option>
+                            <option value="std-1100">std-1100 (Simulated Low Stress)</option>
+                            <option value="custom">-- Enter Custom Student ID --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group id-input-group hidden" id="custom-id-group">
+                    <label for="student-id-input">Custom Student ID</label>
+                    <input type="text" id="student-id-input" placeholder="e.g., std-9874" value="">
+                </div>
+
+                <div class="form-group">
+                    <div class="slider-label">
+                        <label for="semester-week">Current Semester Week</label>
+                        <span id="week-display">Week 6</span>
+                    </div>
+                    <input type="range" id="semester-week" min="1" max="18" value="6" step="1">
+                    <div class="slider-ticks">
+                        <span>W1</span>
+                        <span>Midterms (W8)</span>
+                        <span>W18</span>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button id="btn-fetch" class="btn btn-primary">
+                        <i class="fa-solid fa-chart-line"></i> Run Projections
+                    </button>
+                    <button id="btn-trigger" class="btn btn-secondary">
+                        <i class="fa-solid fa-rotate"></i> Force Recalculate
+                    </button>
+                </div>
+
+                <div class="model-info-box">
+                    <h3>Active Models</h3>
+                    <div class="model-info-row">
+                        <span>Burnout Model:</span>
+                        <code id="info-burnout-v">...</code>
+                    </div>
+                    <div class="model-info-row">
+                        <span>Anxiety Model:</span>
+                        <code id="info-anxiety-v">...</code>
+                    </div>
+                    <div class="model-info-row">
+                        <span>Depressive Model:</span>
+                        <code id="info-depressive-v">...</code>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Results -->
+            <section class="results-panel">
+                <!-- Status/Alert Bar -->
+                <div class="status-banner" id="status-banner">
+                    <div class="banner-icon">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                    <div class="banner-content">
+                        <h3>Status: Uncalculated</h3>
+                        <p>Configure controls and run projections to evaluate clinical risks.</p>
+                    </div>
+                </div>
+
+                <!-- Projections Cards -->
+                <div class="cards-grid">
+                    <!-- Burnout Card -->
+                    <div class="card burnout-card">
+                        <div class="card-header">
+                            <h3>Burnout Risk</h3>
+                            <i class="fa-solid fa-fire-flame-curved card-icon"></i>
+                        </div>
+                        <div class="gauge-wrapper">
+                            <div class="radial-gauge" id="burnout-gauge" style="--value: 0;">
+                                <div class="gauge-inner">
+                                    <span class="gauge-value" id="burnout-value">0%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="risk-pill-container">
+                            <span class="risk-pill" id="burnout-pill">Unknown</span>
+                        </div>
+                    </div>
+
+                    <!-- Anxiety Card -->
+                    <div class="card anxiety-card">
+                        <div class="card-header">
+                            <h3>Anxiety Risk</h3>
+                            <i class="fa-solid fa-bolt card-icon"></i>
+                        </div>
+                        <div class="anxiety-display">
+                            <div class="anxiety-level-badge" id="anxiety-badge">Unknown</div>
+                            <div class="score-display">
+                                <span class="score-num" id="anxiety-score">0.00</span>
+                                <span class="score-label">Anxiety Score</span>
+                            </div>
+                        </div>
+                        <div class="progress-bar-wrapper">
+                            <div class="progress-bar-label">
+                                <span>Severity Profile</span>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-fill" id="anxiety-progress" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Depressive Card -->
+                    <div class="card depressive-card">
+                        <div class="card-header">
+                            <h3>Depressive Onset</h3>
+                            <i class="fa-solid fa-cloud-showers-water card-icon"></i>
+                        </div>
+                        <div class="depressive-display">
+                            <span class="depressive-num" id="depressive-value">0.00</span>
+                            <span class="depressive-label">Onset Index [0.0 - 1.0]</span>
+                        </div>
+                        <div class="progress-bar-wrapper">
+                            <div class="progress-bar-label">
+                                <span>Critical Threshold</span>
+                                <span class="threshold-marker">Alert > 0.60</span>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-fill" id="depressive-progress" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Panel: Detailed Indicators -->
+                <div class="panel detailed-panel">
+                    <h2><i class="fa-solid fa-file-medical"></i> Diagnostic Reports</h2>
+                    <div class="diagnostic-grid">
+                        <div class="diag-item">
+                            <span class="diag-label">Clinical Threshold Breached:</span>
+                            <span class="diag-status" id="diag-threshold"><i class="fa-solid fa-circle-minus"></i> Unknown</span>
+                        </div>
+                        <div class="diag-item">
+                            <span class="diag-label">Anomaly Spike Warning:</span>
+                            <span class="diag-status" id="diag-anomaly"><i class="fa-solid fa-circle-minus"></i> Unknown</span>
+                        </div>
+                        <div class="diag-item">
+                            <span class="diag-label">Prediction Version:</span>
+                            <span class="diag-status" id="diag-version">...</span>
+                        </div>
+                        <div class="diag-item">
+                            <span class="diag-label">Timestamp:</span>
+                            <span class="diag-status" id="diag-time">...</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Script -->
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+venv/
+mope.db
+data/models/*.joblib.tmp
+data/*.csv

@@ -192,10 +192,11 @@ weighted avg       0.78      0.77      0.77      2100
    python scripts/train_models.py
    ```
 
-4. **Launch Server**:
+4. **Launch Server & Dashboard**:
    ```bash
    python run_server.py
    ```
+   Once started, open your web browser and navigate to `http://localhost:8002/` to access the interactive **Wellmate MOPE Dashboard**.
 
 5. **Run Tests**:
    ```bash

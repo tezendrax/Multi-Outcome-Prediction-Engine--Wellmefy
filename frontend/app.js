@@ -43,25 +43,111 @@ document.addEventListener("DOMContentLoaded", () => {
     // Event Handlers
     // ==========================================================================
 
-    // Show/hide custom student ID input
+    // ==========================================================================
+    // Preloaded Test Data Profiles (Pseudo Data for Demos/Fallbacks)
+    // ==========================================================================
+    const MOCK_DATA = {
+        "std-1001": {
+            baseBurnout: 0.62,
+            baseAnxiety: 0.58,
+            baseDepressive: 0.45,
+            stressSensitivity: 0.035, // rises sharply as midterms approach
+            sleepDecay: 0.04,
+            anomaly: true // triggers anomaly jump warning near midterms
+        },
+        "std-1015": {
+            baseBurnout: 0.32,
+            baseAnxiety: 0.38,
+            baseDepressive: 0.28,
+            stressSensitivity: 0.02,
+            sleepDecay: 0.015,
+            anomaly: false
+        },
+        "std-1100": {
+            baseBurnout: 0.06,
+            baseAnxiety: 0.10,
+            baseDepressive: 0.08,
+            stressSensitivity: 0.005,
+            sleepDecay: 0.002,
+            anomaly: false
+        },
+        "std-1200": {
+            baseBurnout: 0.22,
+            baseAnxiety: 0.32,
+            baseDepressive: 0.58, // depressive onset alert triggers easily
+            stressSensitivity: 0.018,
+            sleepDecay: 0.006,
+            anomaly: false
+        }
+    };
+
+    function getMockPrediction(studentId, week) {
+        const profile = MOCK_DATA[studentId];
+        if (!profile) return null;
+        
+        // Midterms peak workload is at Week 8
+        // Proximity factor ranges from 0 (far) to 8 (at Week 8)
+        const midtermProximity = Math.max(0, 8 - Math.abs(8 - week));
+        
+        const burnout = Math.min(0.98, profile.baseBurnout + profile.stressSensitivity * midtermProximity);
+        const anxietyScore = Math.min(0.98, profile.baseAnxiety + profile.stressSensitivity * 0.8 * midtermProximity);
+        const depressive = Math.min(0.98, profile.baseDepressive + profile.stressSensitivity * 0.6 * midtermProximity);
+        
+        let anxietyLevel = "Low";
+        if (anxietyScore >= 0.58) anxietyLevel = "High";
+        else if (anxietyScore >= 0.35) anxietyLevel = "Medium";
+        
+        const thresholdBreached = (burnout >= 0.70 || anxietyScore >= 0.70 || depressive >= 0.60);
+        
+        // Trigger anomaly spike warning if student is std-1001 and slider crosses week 7
+        const isAnomaly = profile.anomaly && week >= 7;
+        
+        return {
+            "student_id": studentId,
+            "predictions": {
+                "burnout_risk": burnout,
+                "anxiety_score": anxietyScore,
+                "clinical_indicator_alert": thresholdBreached || isAnomaly
+            },
+            "details": {
+                "burnout_probability": burnout,
+                "anxiety_level_risk": anxietyLevel,
+                "depressive_onset_index": depressive,
+                "critical_threshold_breached": thresholdBreached,
+                "anomaly_warning": isAnomaly
+            },
+            "model_version": "v1.4.2 (Mock Local Data)",
+            "timestamp": new Date().toISOString()
+        };
+    }
+
+    // ==========================================================================
+    // Event Handlers
+    // ==========================================================================
+
+    // Show/hide custom student ID input & auto-fetch preloaded
     studentSelect.addEventListener("change", (e) => {
         if (e.target.value === "custom") {
             customIdGroup.classList.remove("hidden");
         } else {
             customIdGroup.classList.add("hidden");
+            fetchProjections(e.target.value, parseInt(weekSlider.value));
         }
     });
 
-    // Update semester week display
+    // Update semester week display & auto-update dashboard in real-time
     weekSlider.addEventListener("input", (e) => {
         weekDisplay.textContent = `Week ${e.target.value}`;
+        const studentId = getActiveStudentId();
+        if (studentId && studentSelect.value !== "custom") {
+            fetchProjections(studentId, parseInt(e.target.value));
+        }
     });
 
     // Run Projections button click
     btnFetch.addEventListener("click", () => {
         const studentId = getActiveStudentId();
         if (!studentId) return alert("Please enter a valid Student ID.");
-        
         fetchProjections(studentId, parseInt(weekSlider.value));
     });
 
@@ -69,7 +155,6 @@ document.addEventListener("DOMContentLoaded", () => {
     btnTrigger.addEventListener("click", () => {
         const studentId = getActiveStudentId();
         if (!studentId) return alert("Please enter a valid Student ID.");
-        
         triggerProjections(studentId, parseInt(weekSlider.value));
     });
 
@@ -90,16 +175,13 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const res = await fetch(`${BASE_URL}/health`);
             if (!res.ok) throw new Error("Server unhealthy");
-            
             const data = await res.json();
             
-            // Update Status Badge to online
             serverStatus.innerHTML = `
                 <span class="status-indicator online"></span>
                 <span class="status-text">MOPE Connected</span>
             `;
             
-            // Set model details
             const registered = data.registered_models || {};
             infoBurnoutV.textContent = registered.burnout_xgb ? registered.burnout_xgb.version : "v1.4.2";
             infoAnxietyV.textContent = registered.anxiety_xgb ? registered.anxiety_xgb.version : "v1.4.2";
@@ -109,15 +191,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 diagVersion.textContent = data.active_version;
             }
         } catch (err) {
-            console.error("Health check error:", err);
+            console.warn("Health check failed. Dashboard running in demo/fallback mode.");
             serverStatus.innerHTML = `
                 <span class="status-indicator offline"></span>
-                <span class="status-text">MOPE Offline</span>
+                <span class="status-text">Demo Mode (Offline)</span>
             `;
-            // Set mock active versions as fallback representation
-            infoBurnoutV.textContent = "v1.4.2 (Offline)";
-            infoAnxietyV.textContent = "v1.4.2 (Offline)";
-            infoDepressiveV.textContent = "v1.4.2 (Offline)";
+            infoBurnoutV.textContent = "v1.4.2 (Mock)";
+            infoAnxietyV.textContent = "v1.4.2 (Mock)";
+            infoDepressiveV.textContent = "v1.4.2 (Mock)";
         }
     }
 
@@ -133,8 +214,13 @@ document.addEventListener("DOMContentLoaded", () => {
             const data = await res.json();
             updateDashboard(data);
         } catch (err) {
-            console.error(err);
-            alert(`Error: ${err.message}`);
+            console.warn("API request failed. Loading local preloaded mock data...", err);
+            const mockData = getMockPrediction(studentId, week);
+            if (mockData) {
+                updateDashboard(mockData);
+            } else {
+                alert(`Error: ${err.message}`);
+            }
         } finally {
             setLoading(false);
         }
@@ -166,8 +252,13 @@ document.addEventListener("DOMContentLoaded", () => {
             const data = await res.json();
             updateDashboard(data);
         } catch (err) {
-            console.error(err);
-            alert(`Error: ${err.message}`);
+            console.warn("API request failed. Recalculating via local mock engine...", err);
+            const mockData = getMockPrediction(studentId, week);
+            if (mockData) {
+                updateDashboard(mockData);
+            } else {
+                alert(`Error: ${err.message}`);
+            }
         } finally {
             setLoading(false);
         }

@@ -205,6 +205,17 @@ document.addEventListener("DOMContentLoaded", () => {
     // Fetch cached predictions (GET)
     async function fetchProjections(studentId, week) {
         setLoading(true);
+
+        // DEMO BYPASS: If preloaded profile selected, immediately use local mock calculations
+        if (MOCK_DATA[studentId]) {
+            setTimeout(() => {
+                const mockData = getMockPrediction(studentId, week);
+                updateDashboard(mockData);
+                setLoading(false);
+            }, 100);
+            return;
+        }
+
         try {
             const res = await fetch(`${BASE_URL}/api/v1/predictions/mope?student_id=${studentId}&semester_week=${week}`);
             if (!res.ok) {
@@ -229,6 +240,17 @@ document.addEventListener("DOMContentLoaded", () => {
     // Force recalculate predictions (POST)
     async function triggerProjections(studentId, week) {
         setLoading(true);
+
+        // DEMO BYPASS: If preloaded profile selected, immediately use local mock calculations
+        if (MOCK_DATA[studentId]) {
+            setTimeout(() => {
+                const mockData = getMockPrediction(studentId, week);
+                updateDashboard(mockData);
+                setLoading(false);
+            }, 100);
+            return;
+        }
+
         try {
             const payload = {
                 student_id: studentId,
@@ -385,6 +407,7 @@ document.addEventListener("DOMContentLoaded", () => {
         diagTime.textContent = timestamp;
     }
 
-    // Initialize health check on loading
+    // Initialize health check & load default student on load
     checkServerHealth();
+    fetchProjections(studentSelect.value, parseInt(weekSlider.value));
 });

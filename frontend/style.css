@@ -251,6 +251,11 @@ select:focus {
     border-color: var(--neon-cyan);
 }
 
+select option {
+    background-color: #121621;
+    color: #ffffff;
+}
+
 .select-wrapper::after {
     content: '\f107';
     font-family: 'Font Awesome 6 Free';
